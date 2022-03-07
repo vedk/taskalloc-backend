@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:root@localhost:3306/midata"
+}
+
+model Auth {
+  id Int @id @default(autoincrement())
+  ldap String
+  passwd String
+  privlevel Int
+}
+
+model Cg {
+  id Int @id @default(autoincrement())
+  ldap String
+  name String
+}
+
+model Coordinator {
+  id Int @id @default(autoincrement())
+  ldap String
+  name String
+
+  events Event[]
+  tasks Task[]
+}
+
+model Organizer {
+  id Int @id @default(autoincrement())
+  ldap String
+  name String
+  
+  events Event[]
+  tasks Task[]
+}
+
+model Event {
+  id Int @id @default(autoincrement())
+  name String
+  desc String
+
+  tasks Task[]
+  coordinators Coordinator[]
+  organizers Organizer[]
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  name String
+  desc String
+
+  subtasks Subtask[]
+
+  coordinators Coordinator[]
+  organizers Organizer[]
+  events Event[]
+}
+
+model Subtask {
+  id Int @id @default(autoincrement())
+  name String
+  desc String
+  status Int
+
+  tasks Task[]
+}
