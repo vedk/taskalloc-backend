@@ -33,3 +33,4 @@ $ curl -v -X POST -d "ldap=20d170019&passwd=20d170019" http://localhost:3000/api
 * Connection #0 to host localhost left intact
 {"success":true,"privlevel":0}
 ```
+Run `npx prisma studio` to get a view of the database.
