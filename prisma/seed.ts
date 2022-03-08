@@ -11,6 +11,34 @@ async function main() {
 	await prisma.cg.deleteMany({});
 	await prisma.coordinator.deleteMany({});
 	await prisma.organizer.deleteMany({});
+	await prisma.event.deleteMany({});
+
+	console.log("adding events");
+	const alleventdata = [
+		{
+			data: {
+				desc: "The first event",
+				name: "Event One"
+			}
+		},
+		{
+			data: {
+				desc: "The second event",
+				name: "Event Two"
+			}
+		},
+		{
+			data: {
+				desc: "The third event",
+				name: "Event Three"
+			}
+		},
+	];
+
+	alleventdata.forEach(async (e) => {
+		console.log(`  ${e.data.name}`);
+		await prisma.event.create(e);
+	});
 
 	console.log("adding CGs");
 	const allcgdata = [
@@ -149,14 +177,6 @@ async function main() {
 			});
 		});
 	});
-
-	/*await prisma.event.create({
-		data: {
-			name: "Event One",
-			desc: "This is event one",
-			coordinators: {connect: [{id: 1}, {id: 2}, {id: 3}]}
-		}
-	});*/
 }
 
 main()

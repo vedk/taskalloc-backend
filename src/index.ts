@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import expressSession from "express-session";
 import bodyParser from "body-parser";
+import cors from "cors"
 // import helmet from "helmet"
 
 import bcrypt from "bcrypt";
@@ -25,6 +26,10 @@ const port: number = 3000;
  * Please run "npm i helmet" before uncommenting the line below.
  */
 // app.use(helmet());
+app.use(cors({
+	origin: "http://localhost:3001",
+	credentials: true
+}));
 
 let redisClient = createClient({legacyMode: true});
 redisClient.connect().catch(console.error);
@@ -33,7 +38,7 @@ app.use(expressSession({
 	store: new RedisStore({client: redisClient}),
 	secret: "this is for mi 2022",
 	resave: false,
-	cookie: {maxAge: 120000}, // in ms, increase this to 4 days in production
+	cookie: {maxAge: 5*60*1000}, // in ms, increase this to 4 days in production
 	saveUninitialized: false
 }));
 
@@ -151,6 +156,19 @@ app.get("/api/v1/events", authmw, async (req: Request, res: Response, next: Next
 	res.status(200).json(await prisma.event.findMany());
 });
 
+app.get("/api/v1/events/:eid", authmw, async (req: Request, res: Response, next: NextFunction) => {
+	res.status(200).json(await prisma.event.findUnique({
+		where: {
+			id: parseInt(req.params['eid']!)
+		},
+		include: {
+			tasks: true,
+			coordinators: true,
+			organizers: true
+		}
+	}));
+});
+
 app.post("/api/v1/events", [authmw, urlencodedParser], async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		await prisma.event.create({
@@ -160,6 +178,49 @@ app.post("/api/v1/events", [authmw, urlencodedParser], async (req: Request, res:
 				tasks: {connect: req.body.tasks.map((e: string) => ({id: parseInt(e)}))},
 				coordinators: {connect: req.body.coordinators.map((e: string) => ({id: parseInt(e)}))},
 				organizers: {connect: req.body.organizers.map((e: string) => ({id: parseInt(e)}))}
+			}
+		});
+	} catch (e) {
+		console.error(e);
+		res.sendStatus(500);
+	}
+
+	res.sendStatus(200);
+});
+
+app.post("/api/v1/updateevent/:evid", urlencodedParser, async (req: Request, res: Response, next: NextFunction) => {
+	var t, c, o;
+
+	if (req.body.tasks) {
+		if (!Array.isArray(req.body.tasks))
+			t = [{id: parseInt(req.body.tasks)}];
+		else
+			t = req.body.tasks.map((e: string) => ({id: parseInt(e)}));
+	}
+	
+	if (req.body.coordinators) {
+		if (!Array.isArray(req.body.coordinators))
+			c = [{id: parseInt(req.body.coordinators)}];
+		else
+			c = req.body.coordinators.map((e: string) => ({id: parseInt(e)}));
+	}
+
+	if (req.body.organizers) {
+		if (!Array.isArray(req.body.organizers))
+			o = [{id: parseInt(req.body.organizers)}];
+		else
+			o = req.body.organizers.map((e: string) => ({id: parseInt(e)}));
+	}
+
+	try {
+		await prisma.event.update({
+			where: {id: parseInt(req.params['evid']!)},
+			data: {
+				name: req.body.name,
+				desc: req.body.desc,
+				tasks: {connect: t},
+				coordinators: {connect: c},
+				organizers: {connect: o}
 			}
 		});
 	} catch (e) {
